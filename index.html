@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#101b2d" />
+  <meta name="description" content="Poupscan explores building-based population estimates from satellite imagery." />
+  <title>Poupscan — Building-based population insights</title>
+  <link rel="stylesheet" href="src/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="shell nav">
+      <a class="brand" href="#home" aria-label="Poupscan home"><span class="brandmark">P</span><span>poupscan</span></a>
+      <nav><a href="#how">How it works</a><a href="#workspace">Workspace</a><a class="nav-cta" href="#workspace">Start a scan</a></nav>
+    </div>
+  </header>
+
+  <section class="hero" id="home">
+    <div class="shell hero-inner">
+      <div class="eyebrow"><span class="pulse"></span> SEE THE PEOPLE BEHIND THE ROOFTOPS</div>
+      <h1>Turn buildings into <span>population</span> insights.</h1>
+      <p>Poupscan is an early-stage mapping tool for exploring how building footprints and satellite imagery can help estimate how many people may live in an area.</p>
+      <div class="hero-actions"><a class="btn btn-primary" href="#workspace">Explore the workspace <span>↗</span></a><a class="btn btn-secondary" href="#how">Understand the method</a></div>
+      <div class="hero-foot"><span>01 / BUILDING INVENTORY</span><span>02 / OCCUPANCY ASSUMPTIONS</span><span>03 / POPULATION RANGE</span></div>
+    </div>
+    <div class="hero-art" aria-hidden="true"><div class="orbit orbit-a"></div><div class="orbit orbit-b"></div><div class="scan-grid"></div><div class="roof roof-a"></div><div class="roof roof-b"></div><div class="roof roof-c"></div><div class="roof roof-d"></div><div class="scan-label">ROOFTOP SCAN / CONCEPT</div></div>
+  </section>
+
+  <main class="shell main" id="workspace">
+    <div class="section-head"><div><div class="eyebrow dark">POUPSCAN WORKSPACE</div><h2>Build your first population estimate</h2><p>Select a study boundary on MapScan, then use an image you are licensed to analyse or manually mark buildings while the automated detection pipeline is developed.</p></div><span class="status"><i></i> MVP · map selection + manual marking</span></div>
+
+    <section class="panel map-panel" id="mapscan">
+      <div class="panel-top"><div><span class="step-label">01 / MAPSCAN · AREA SELECTION</span><h3>Select a study area directly on the map</h3></div><span class="panel-icon">⌖</span></div>
+      <p class="panel-copy">Search for a place, switch to satellite view, then click around the boundary you want to study. Finish the boundary to calculate its approximate area.</p>
+      <div class="map-toolbar">
+        <div class="map-search"><input id="mapSearchInput" class="text-input" type="search" placeholder="Search a city, village, neighbourhood or landmark" aria-label="Search map location"/><button id="mapSearchBtn" class="btn btn-light">Search map</button></div>
+        <div class="map-actions"><button id="finishBoundary" class="btn btn-primary" disabled>Finish boundary</button><button id="undoVertex" class="btn btn-light" disabled>Undo point</button><button id="clearBoundary" class="btn btn-light" disabled>Clear area</button></div>
+      </div>
+      <div id="googleMap" class="google-map"><div class="map-placeholder"><div class="map-placeholder-icon">⌖</div><strong>Connect Google Maps to start MapScan</strong><span>Add your Google Maps JavaScript API key below. The map will open in satellite mode.</span></div></div>
+      <div class="map-key-row"><label class="field-label" for="googleMapsKey">GOOGLE MAPS API KEY</label><input id="googleMapsKey" class="text-input" type="password" autocomplete="off" placeholder="Paste your restricted Google Maps API key"/><button id="loadGoogleMap" class="btn btn-secondary">Load satellite map</button></div>
+      <div class="map-summary"><div><span>SELECTED AREA</span><strong id="selectedAreaName">No boundary selected</strong></div><div><span>APPROX. AREA</span><strong id="selectedAreaSize">—</strong></div><div><span>BOUNDARY POINTS</span><strong id="selectedAreaPoints">0</strong></div></div>
+      <div id="mapNotice" class="notice" role="status">Map is not connected yet. No device location is requested; search for a place manually.</div>
+      <div class="map-policy"><strong>Important imagery limitation:</strong> Google satellite imagery can be displayed for map navigation and boundary selection, but Google Maps terms restrict using its imagery for machine interpretation or building detection. Poupscan will need a separately licensed imagery source or building-footprint dataset for automated analysis. <a href="https://developers.google.com/maps/faq" target="_blank" rel="noreferrer">Google Maps usage rules</a>.</div>
+    </section>
+
+    <div class="workspace-grid">
+      <section class="panel image-panel">
+        <div class="panel-top"><div><span class="step-label">02 / IMAGE INPUT</span><h3>Optional: add an analysis image</h3></div><span class="panel-icon">⌗</span></div>
+        <label class="field-label" for="areaName">STUDY AREA NAME</label>
+        <input id="areaName" class="text-input" type="text" placeholder="e.g. Ward 12, Raipur (enter manually)" />
+        <div class="upload-zone" id="dropZone" tabindex="0" role="button" aria-label="Upload a satellite image">
+          <input id="imageInput" type="file" accept="image/png,image/jpeg,image/webp" hidden />
+          <div id="uploadPrompt"><div class="upload-symbol">↑</div><strong>Drop a satellite image here</strong><span>or <u>browse files</u> · PNG, JPG, WEBP</span><small>Image stays on this device in this prototype.</small></div>
+          <div id="imageStage" class="image-stage" hidden><canvas id="imageCanvas"></canvas><div class="canvas-help">Click on each visible building roof to place a marker</div></div>
+        </div>
+        <div class="image-controls"><button class="btn btn-light" id="undoMark" disabled>↶ Undo last</button><button class="btn btn-light" id="clearMarks" disabled>Clear markers</button><span id="markerCount" class="marker-count">0 buildings marked</span></div>
+        <div class="notice" id="imageNotice" role="status">No image selected yet. Upload an image to begin marking buildings.</div>
+        <div class="privacy-note">⌑ No device location is requested. Image processing and markers stay in your browser; nothing is uploaded.</div>
+      </section>
+
+      <section class="panel estimate-panel">
+        <div class="panel-top"><div><span class="step-label">03 / ESTIMATION MODEL</span><h3>Set occupancy assumptions</h3></div><span class="panel-icon">≈</span></div>
+        <p class="panel-copy">These values are editable assumptions, not facts detected from the image. Use local survey or census data when available.</p>
+        <div class="assumption"><label for="residentialShare">Residential buildings <b id="residentialShareValue">80%</b></label><input id="residentialShare" type="range" min="0" max="100" value="80" /><div class="range-ends"><span>0%</span><span>100%</span></div></div>
+        <div class="assumption"><label for="unitsPerBuilding">Average homes per residential building</label><div class="number-wrap"><input id="unitsPerBuilding" class="number-input" type="number" min="1" max="500" step="1" value="2" /><span>homes / building</span></div></div>
+        <div class="assumption"><label for="peoplePerHome">Average people per home</label><div class="number-wrap"><input id="peoplePerHome" class="number-input" type="number" min="1" max="20" step="0.1" value="4.2" /><span>people / home</span></div></div>
+        <div class="assumption"><label for="occupancy">Occupied homes <b id="occupancyValue">90%</b></label><input id="occupancy" type="range" min="0" max="100" value="90" /><div class="range-ends"><span>0%</span><span>100%</span></div></div>
+        <div class="formula">Population ≈ marked buildings × residential share × homes/building × occupancy × people/home</div>
+        <button id="calculateBtn" class="btn btn-primary calculate-btn">Calculate population range <span>→</span></button>
+      </section>
+    </div>
+
+    <section class="results panel" aria-live="polite">
+      <div class="results-head"><div><span class="step-label">04 / SCAN RESULTS</span><h3>Your estimate</h3></div><span class="result-tag">PRELIMINARY · NOT OFFICIAL CENSUS</span></div>
+      <div class="result-grid">
+        <div class="result-card"><span>Buildings marked</span><strong id="resultBuildings">0</strong><small>Manually identified roofs</small></div>
+        <div class="result-card featured"><span>Estimated population</span><strong id="resultPopulation">—</strong><small id="resultRange">Calculate to view a range</small></div>
+        <div class="result-card"><span>Estimated residential homes</span><strong id="resultHomes">—</strong><small>Based on editable assumptions</small></div>
+      </div>
+      <div class="result-bottom"><p id="resultExplanation">Upload an image, mark buildings, and calculate to generate a transparent estimate.</p><div class="result-actions"><button id="exportCsv" class="btn btn-light" disabled>↓ Export CSV</button><button id="resetAll" class="btn btn-quiet">Reset workspace</button></div></div>
+    </section>
+
+    <section class="how-section" id="how">
+      <div class="section-head compact"><div><div class="eyebrow dark">THE IDEA</div><h2>From rooftops to people — carefully.</h2><p>Buildings are a useful starting point, but a building count alone is not a population count.</p></div></div>
+      <div class="method-grid">
+        <article class="method-card"><span class="method-number">01</span><div class="method-icon">▧</div><h3>Build an inventory</h3><p>Use satellite imagery or trusted building-footprint datasets to identify structures in a selected boundary.</p></article>
+        <article class="method-card"><span class="method-number">02</span><div class="method-icon">⌂</div><h3>Understand building use</h3><p>Separate likely residential buildings from shops, factories, schools, offices and other structures.</p></article>
+        <article class="method-card"><span class="method-number">03</span><div class="method-icon">↗</div><h3>Estimate occupancy</h3><p>Combine home counts with local household-size and occupancy information, documenting every assumption.</p></article>
+        <article class="method-card"><span class="method-number">04</span><div class="method-icon">◎</div><h3>Validate the result</h3><p>Compare estimates with trusted ground data and show uncertainty rather than presenting false precision.</p></article>
+      </div>
+    </section>
+
+    <section class="use-case"><div><div class="eyebrow">WHY POUPSCAN?</div><h2>Make population data more useful for local planning.</h2><p>Better small-area estimates could help planners explore where schools, clinics, water supply, transport and other services may be needed. These are planning signals, not a replacement for official statistics.</p></div><div class="use-case-points"><div><b>Schools & learning</b><span>Explore where demand may be higher.</span></div><div><b>Health services</b><span>Understand possible service coverage gaps.</span></div><div><b>Water & infrastructure</b><span>Support early-stage capacity planning.</span></div></div></section>
+  </main>
+
+  <footer><div class="shell footer-inner"><a class="brand footer-brand" href="#home"><span class="brandmark">P</span><span>poupscan</span></a><span>Early-stage research prototype · 2026</span><span>Estimates are not official population counts.</span></div></footer>
+  <script src="src/config.js"></script>
+  <script src="src/app.js"></script>
+  <script src="src/map.js"></script>
+</body>
+</html>
